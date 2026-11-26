@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Relay · User Portal</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap');
+:root{--bg:#0a0a0f;--bg2:#111118;--bg3:#1a1a24;--border:#2a2a3a;--accent:#7c6af7;--accent2:#4ecdc4;--red:#ff6b6b;--yellow:#ffd93d;--green:#4ecdc4;--text:#e8e8f0;--text2:#8888aa;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,106,247,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,106,247,.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;}
+header{border-bottom:1px solid var(--border);padding:16px 40px;display:flex;align-items:center;justify-content:space-between;background:var(--bg2);position:sticky;top:0;z-index:10;}
+.logo{font-size:18px;font-weight:800;}.logo span{color:var(--accent);}
+.header-nav{display:flex;gap:12px;align-items:center;}
+.container{max-width:860px;margin:0 auto;padding:48px 24px;width:100%;flex:1;}
+.auth-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:440px;margin:0 auto 32px;}
+.auth-tabs{display:flex;margin-bottom:24px;background:var(--bg3);border-radius:8px;padding:4px;}
+.auth-tab{flex:1;padding:8px;border:none;background:none;color:var(--text2);font-family:'Syne',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border-radius:6px;transition:all .15s;}
+.auth-tab.active{background:var(--accent);color:white;}
+.auth-form{display:none;}.auth-form.active{display:block;}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden;}
+.card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.card:nth-child(1)::after{background:var(--yellow);}
+.card:nth-child(2)::after{background:var(--green);}
+.card:nth-child(3)::after{background:var(--accent);}
+.card-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}
+.card-value{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;letter-spacing:-1px;}
+.section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px;}
+.section h3{font-size:15px;font-weight:700;margin-bottom:16px;}
+.key-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent2);cursor:pointer;word-break:break-all;transition:border-color .15s;margin-bottom:8px;}
+.key-box:hover{border-color:var(--accent2);}
+.key-meta{display:flex;gap:16px;font-size:12px;color:var(--text2);font-family:'JetBrains Mono',monospace;margin-bottom:16px;flex-wrap:wrap;}
+.quota-bar{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:6px;}
+.quota-fill{height:100%;background:var(--accent);border-radius:3px;}
+.code-block{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;position:relative;overflow-x:auto;white-space:pre;}
+.code-block .kw{color:#c792ea;}.code-block .str{color:var(--accent2);}
+.copy-btn{position:absolute;top:10px;right:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:'Syne',sans-serif;font-weight:600;cursor:pointer;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);}
+.model-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;}
+.model-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.model-name{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:4px;}
+.model-provider{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;}
+input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;transition:border-color .15s;margin-bottom:12px;}
+input:focus{border-color:var(--accent);}
+label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;}
+.btn{padding:11px 20px;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;width:100%;}
+.btn-primary{background:var(--accent);color:white;}.btn-primary:hover{opacity:.85;}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2);}
+.btn-outline:hover{border-color:var(--red);color:var(--red);}
+.err{color:var(--red);font-size:13px;margin-top:-6px;margin-bottom:10px;display:none;}
+.note{font-size:13px;color:var(--text2);line-height:1.6;}
+.captcha-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;}
+.captcha-row input{margin-bottom:0;flex:1;}
+.captcha-img{width:110px;height:40px;border-radius:8px;border:1px solid var(--border);cursor:pointer;flex-shrink:0;background:var(--bg3);}
+.captcha-hint{font-size:11px;color:var(--text2);margin-bottom:12px;}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 20px;font-size:14px;font-weight:600;z-index:200;transform:translateY(80px);opacity:0;transition:all .3s;max-width:320px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-color:rgba(78,205,196,.5);color:var(--green);}
+.toast.error{border-color:rgba(255,107,107,.5);color:var(--red);}
+footer{border-top:1px solid var(--border);padding:20px 40px;text-align:center;font-size:12px;color:var(--text2);}
+.dash-tabs{display:flex;gap:4px;margin-bottom:24px;background:var(--bg3);border-radius:10px;padding:4px;}
+.dash-tab{flex:1;padding:9px;border:none;background:none;color:var(--text2);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-radius:7px;transition:all .15s;}
+.dash-tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.3);}
+.tab-page{display:none;}.tab-page.active{display:block;}
+@media (max-width:640px){.cards{grid-template-columns:1fr;}header{padding:16px;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">relay<span>.</span></div>
+  <div class="header-nav">
+    <span id="headerEmail" style="font-size:13px;color:var(--text2)"></span>
+    <button class="btn btn-outline" id="logoutBtn" style="width:auto;padding:6px 14px;font-size:12px;display:none" onclick="logout()">Log out</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Signed out -->
+  <div id="authSection">
+    <div style="text-align:center;margin-bottom:32px">
+      <h1 style="font-size:36px;font-weight:800;letter-spacing:-1px;margin-bottom:8px">LLM <span style="color:var(--accent)">Gateway</span></h1>
+      <p style="color:var(--text2);font-size:15px">One OpenAI-compatible API for Groq, DeepSeek, OpenAI and Anthropic</p>
+    </div>
+    <div class="auth-wrap">
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchTab('login')">Log in</button>
+        <button class="auth-tab" onclick="switchTab('register')">Sign up</button>
+      </div>
+      <div class="auth-form active" id="loginForm">
+        <div><label>Email</label><input type="email" id="loginEmail" placeholder="you@example.com"/></div>
+        <div><label>Password</label><input type="password" id="loginPwd" placeholder="••••••••"/></div>
+        <div>
+          <label>CAPTCHA</label>
+          <div class="captcha-row">
+            <input type="text" id="loginCaptchaCode" placeholder="Enter code" maxlength="4" style="text-transform:uppercase"/>
+            <img class="captcha-img" id="loginCaptchaImg" onclick="refreshCaptcha('login')" title="Click to refresh" alt="CAPTCHA"/>
+          </div>
+          <div class="captcha-hint">Click the image for a new code</div>
+        </div>
+        <div class="err" id="loginErr"></div>
+        <button class="btn btn-primary" onclick="doLogin()">Log in</button>
+      </div>
+      <div class="auth-form" id="registerForm">
+        <div><label>Email</label><input type="email" id="regEmail" placeholder="you@example.com"/></div>
+        <div><label>Password (at least 8 characters)</label><input type="password" id="regPwd" placeholder="••••••••"/></div>
+        <div><label>Confirm password</label><input type="password" id="regPwd2" placeholder="••••••••"/></div>
+        <div>
+          <label>CAPTCHA</label>
+          <div class="captcha-row">
+            <input type="text" id="regCaptchaCode" placeholder="Enter code" maxlength="4" style="text-transform:uppercase"/>
+            <img class="captcha-img" id="regCaptchaImg" onclick="refreshCaptcha('reg')" title="Click to refresh" alt="CAPTCHA"/>
+          </div>
+          <div class="captcha-hint">Click the image for a new code</div>
+        </div>
+        <div class="err" id="regErr"></div>
+        <button class="btn btn-primary" onclick="doRegister()">Sign up</button>
+      </div>
+    </div>
+    <div class="section"><h3>Supported models</h3><div class="model-grid" id="modelGrid"></div></div>
+  </div>
+
+  <!-- Signed in -->
+  <div id="dashSection" style="display:none">
+    <div style="font-size:22px;font-weight:800;margin-bottom:20px">Hello, <span id="userEmail" style="color:var(--accent2)"></span></div>
+
+    <div class="dash-tabs">
+      <button class="dash-tab active" onclick="showTab('overview')">Overview</button>
+      <button class="dash-tab" onclick="showTab('docs')">Quick start</button>
+    </div>
+
+    <div class="tab-page active" id="tab-overview">
+      <div class="cards">
+        <div class="card"><div class="card-label">Token quota</div><div class="card-value" id="quotaTotal" style="color:var(--yellow)">0</div></div>
+        <div class="card"><div class="card-label">Tokens used</div><div class="card-value" id="quotaUsed">0</div></div>
+        <div class="card"><div class="card-label">Remaining</div><div class="card-value" id="quotaLeft" style="color:var(--accent)">0</div></div>
+      </div>
+      <div class="section">
+        <h3>Your API keys</h3>
+        <div id="keyList"></div>
+        <p class="note" id="quotaNote" style="display:none">Your key has no token quota yet. An administrator grants quotas; requests are refused until one is set.</p>
+      </div>
+    </div>
+
+    <div class="tab-page" id="tab-docs">
+      <div class="section">
+        <h3>Quick start</h3>
+        <p style="font-size:14px;color:var(--text2);margin-bottom:14px">Works with the OpenAI SDK: change only <code>base_url</code> and <code>api_key</code>.</p>
+        <div style="position:relative"><div class="code-block" id="codeBlock"></div><button class="copy-btn" onclick="copyCode()">Copy</button></div>
+      </div>
+      <div class="section"><h3>Supported models</h3><div class="model-grid" id="modelGrid2"></div></div>
+    </div>
+  </div>
+</div>
+
+<footer>LLM Relay · multi-provider LLM gateway</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = location.origin;
+const MODELS = [
+  {name:'llama-3.3-70b',provider:'Groq'},
+  {name:'llama-3.1-8b',provider:'Groq'},
+  {name:'mixtral-8x7b',provider:'Groq'},
+  {name:'deepseek-chat',provider:'DeepSeek'},
+  {name:'gpt-4o-mini',provider:'OpenAI'},
+  {name:'gpt-4o',provider:'OpenAI'},
+  {name:'claude-sonnet-4-6',provider:'Anthropic'},
+  {name:'claude-haiku-4-5',provider:'Anthropic'},
+];
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => Number(n || 0).toLocaleString();
+
+function renderModels(id) {
+  document.getElementById(id).innerHTML = MODELS.map(m => `
+    <div class="model-card"><div class="model-name">${m.name}</div><div class="model-provider">${m.provider}</div></div>`).join('');
+}
+renderModels('modelGrid');
+
+// CAPTCHA
+let loginCaptchaToken = '', regCaptchaToken = '';
+async function refreshCaptcha(type) {
+  try {
+    const res = await fetch(`${BASE}/captcha/image?t=${Date.now()}`);
+    const token = res.headers.get('X-Captcha-Token');
+    const url = URL.createObjectURL(await res.blob());
+    if (type === 'login') { document.getElementById('loginCaptchaImg').src = url; loginCaptchaToken = token; }
+    else { document.getElementById('regCaptchaImg').src = url; regCaptchaToken = token; }
+  } catch (e) {}
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t, i) => t.classList.toggle('active', (tab === 'login') === (i === 0)));
+  document.getElementById('loginForm').classList.toggle('active', tab === 'login');
+  document.getElementById('registerForm').classList.toggle('active', tab === 'register');
+  refreshCaptcha(tab === 'login' ? 'login' : 'reg');
+}
+
+// Session
+let userToken = localStorage.getItem('relay_token');
+
+async function postAuth(path, payload, errEl, captchaType) {
+  try {
+    const res = await fetch(BASE + path, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    const d = await res.json();
+    if (!res.ok) { showErr(errEl, d.detail || 'Request failed'); refreshCaptcha(captchaType); return null; }
+    return d;
+  } catch (e) { showErr(errEl, 'Network error'); return null; }
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPwd').value;
+  const code = document.getElementById('loginCaptchaCode').value.trim();
+  const err = document.getElementById('loginErr'); err.style.display = 'none';
+  if (!email || !password) return showErr(err, 'Enter your email and password');
+  if (!code) return showErr(err, 'Enter the CAPTCHA code');
+  const d = await postAuth('/user/login', {email, password, captcha_token:loginCaptchaToken, captcha_code:code}, err, 'login');
+  if (d) { saveSession(d.token); showDashboard(d); }
+}
+
+async function doRegister() {
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPwd').value;
+  const password2 = document.getElementById('regPwd2').value;
+  const code = document.getElementById('regCaptchaCode').value.trim();
+  const err = document.getElementById('regErr'); err.style.display = 'none';
+  if (!email || !password) return showErr(err, 'Fill in every field');
+  if (password !== password2) return showErr(err, 'The passwords do not match');
+  if (password.length < 8) return showErr(err, 'Password must be at least 8 characters');
+  if (!code) return showErr(err, 'Enter the CAPTCHA code');
+  const d = await postAuth('/user/register', {email, password, captcha_token:regCaptchaToken, captcha_code:code}, err, 'reg');
+  if (d) { saveSession(d.token); showToast('Account created', 'success'); showDashboard(d); }
+}
+
+function saveSession(token) { userToken = token; localStorage.setItem('relay_token', token); }
+
+async function loadMe() {
+  try {
+    const res = await fetch(BASE + '/user/me', {headers:{'X-User-Token':userToken}});
+    if (!res.ok) { clearSession(); return; }
+    showDashboard(await res.json());
+  } catch (e) {}
+}
+
+function showDashboard(d) {
+  const keys = d.keys || [];
+  document.getElementById('authSection').style.display = 'none';
+  document.getElementById('dashSection').style.display = 'block';
+  document.getElementById('userEmail').textContent = d.email;
+  document.getElementById('headerEmail').textContent = d.email;
+  document.getElementById('logoutBtn').style.display = 'block';
+  const sum = f => keys.reduce((s, k) => s + (k[f] || 0), 0);
+  document.getElementById('quotaTotal').textContent = fmt(sum('token_quota'));
+  document.getElementById('quotaUsed').textContent = fmt(sum('tokens_used'));
+  document.getElementById('quotaLeft').textContent = fmt(sum('tokens_remaining'));
+  document.getElementById('quotaNote').style.display = sum('token_quota') ? 'none' : 'block';
+  document.getElementById('keyList').innerHTML = keys.map(k => {
+    const pct = k.token_quota ? Math.min(100, k.tokens_used / k.token_quota * 100) : 0;
+    return `
+    <div class="key-box" data-key="${esc(k.key)}" onclick="copyText(this.dataset.key)" title="Click to copy">${esc(k.key)}</div>
+    <div class="quota-bar"><div class="quota-fill" style="width:${pct.toFixed(1)}%"></div></div>
+    <div class="key-meta">
+      <span>${fmt(k.tokens_used)} / ${fmt(k.token_quota)} tokens</span>
+      <span>${fmt(k.tokens_remaining)} remaining</span>
+      <span style="color:${k.active ? 'var(--green)' : 'var(--red)'}">● ${k.active ? 'active' : 'disabled'}</span>
+    </div>`;
+  }).join('');
+  const key = esc(keys[0]?.key || 'sk-relay-your-key');
+  document.getElementById('codeBlock').innerHTML =
+`<span class="kw">from</span> openai <span class="kw">import</span> OpenAI
+
+client = OpenAI(
+    api_key=<span class="str">"${key}"</span>,
+    base_url=<span class="str">"${BASE}/v1"</span>,
+)
+
+response = client.chat.completions.create(
+    model=<span class="str">"llama-3.3-70b"</span>,
+    messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"Hello"</span>}],
+)
+print(response.choices[0].message.content)`;
+  renderModels('modelGrid2');
+}
+
+function showTab(name) {
+  const tabs = ['overview', 'docs'];
+  document.querySelectorAll('.dash-tab').forEach((t, i) => t.classList.toggle('active', tabs[i] === name));
+  document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'overview') loadMe();
+}
+
+function clearSession() {
+  localStorage.removeItem('relay_token');
+  userToken = null;
+  document.getElementById('authSection').style.display = 'block';
+  document.getElementById('dashSection').style.display = 'none';
+  document.getElementById('logoutBtn').style.display = 'none';
+  document.getElementById('headerEmail').textContent = '';
+  refreshCaptcha('login');
+}
+
+async function logout() {
+  try { await fetch(BASE + '/user/logout', {method:'POST', headers:{'X-User-Token':userToken}}); } catch (e) {}
+  clearSession();
+}
+
+function copyText(t) { navigator.clipboard.writeText(t); showToast('Copied', 'success'); }
+function copyCode() { navigator.clipboard.writeText(document.getElementById('codeBlock').innerText); showToast('Copied', 'success'); }
+function showErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+let tt;
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = (type === 'success' ? '✓ ' : '✗ ') + msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 3000);
+}
+document.getElementById('loginPwd').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('regPwd2').addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
+
+if (userToken) loadMe(); else refreshCaptcha('login');
+</script>
+</body>
+</html>

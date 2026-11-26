@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Relay · Admin</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap');
+:root{--bg:#0a0a0f;--bg2:#111118;--bg3:#1a1a24;--border:#2a2a3a;--accent:#7c6af7;--accent2:#4ecdc4;--red:#ff6b6b;--yellow:#ffd93d;--green:#4ecdc4;--text:#e8e8f0;--text2:#8888aa;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,106,247,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(124,106,247,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:100vh;position:relative;z-index:1;}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:28px 20px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;}
+.logo{font-size:18px;font-weight:800;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+.logo span{color:var(--accent);}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text2);transition:all .15s;border:none;background:none;width:100%;text-align:left;}
+.nav-item:hover{background:var(--bg3);color:var(--text);}
+.nav-item.active{background:rgba(124,106,247,.15);color:var(--accent);}
+.main{padding:32px 40px;overflow-y:auto;}
+.page{display:none;animation:fadeIn .2s;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+.page-title{font-size:28px;font-weight:800;letter-spacing:-1px;}
+.login-wrap{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:40px;width:380px;max-width:calc(100% - 32px);}
+.login-box h2{font-size:24px;font-weight:800;margin-bottom:6px;}
+.login-box p{color:var(--text2);font-size:14px;margin-bottom:28px;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden;}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.stat-card:nth-child(1)::after{background:var(--accent);}
+.stat-card:nth-child(2)::after{background:var(--accent2);}
+.stat-card:nth-child(3)::after{background:var(--yellow);}
+.stat-card:nth-child(4)::after{background:var(--green);}
+.stat-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}
+.stat-value{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;letter-spacing:-1px;}
+.stat-sub{font-size:12px;color:var(--text2);margin-top:4px;}
+input,select{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;transition:border-color .15s;}
+input:focus,select:focus{border-color:var(--accent);}
+label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase;}
+.field{margin-bottom:16px;}
+.btn{padding:10px 20px;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;}
+.btn-primary{background:var(--accent);color:white;}.btn-primary:hover{opacity:.85;}
+.btn-full{width:100%;}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:6px;}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2);}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+.btn-green{background:rgba(78,205,196,.15);color:var(--green);border:1px solid rgba(78,205,196,.3);}
+.btn-green:hover{background:rgba(78,205,196,.25);}
+.btn-red{background:rgba(255,107,107,.15);color:var(--red);border:1px solid rgba(255,107,107,.3);}
+.btn-red:hover{background:rgba(255,107,107,.25);}
+.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:auto;margin-bottom:24px;}
+.table-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.table-header h3{font-size:15px;font-weight:700;}
+table{width:100%;border-collapse:collapse;}
+th{padding:11px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;background:var(--bg3);white-space:nowrap;}
+td{padding:12px 16px;font-size:13px;border-top:1px solid var(--border);font-family:'JetBrains Mono',monospace;}
+tr:hover td{background:rgba(124,106,247,.04);}
+.badge-green{background:rgba(78,205,196,.15);color:var(--green);padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;font-family:'Syne',sans-serif;}
+.badge-red{background:rgba(255,107,107,.15);color:var(--red);padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;font-family:'Syne',sans-serif;}
+.empty{text-align:center;padding:40px;color:var(--text2);font-size:14px;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:50;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:32px;width:420px;max-width:calc(100% - 32px);transform:translateY(20px);transition:transform .2s;}
+.modal-overlay.open .modal{transform:translateY(0);}
+.modal h3{font-size:18px;font-weight:800;margin-bottom:20px;}
+.modal-footer{display:flex;gap:10px;margin-top:20px;}
+.modal-footer .btn{flex:1;}
+.key-display{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:12px;word-break:break-all;color:var(--accent2);margin:12px 0;cursor:pointer;}
+.pool-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-top:16px;}
+.pool-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.pool-name{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text2);margin-bottom:8px;}
+.pool-count{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;color:var(--green);}
+.quota-row{display:flex;gap:6px;align-items:center;}
+.quota-row input{width:110px;padding:5px 8px;}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 20px;font-size:14px;font-weight:600;z-index:200;transform:translateY(80px);opacity:0;transition:all .3s;max-width:320px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-color:rgba(78,205,196,.5);color:var(--green);}
+.toast.error{border-color:rgba(255,107,107,.5);color:var(--red);}
+.bar-wrap{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.bar-label{font-size:12px;color:var(--text2);width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'JetBrains Mono',monospace;}
+.bar-track{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .6s;}
+.bar-val{font-size:12px;color:var(--text2);width:110px;text-align:right;font-family:'JetBrains Mono',monospace;}
+.day-tabs{display:flex;gap:6px;}
+.day-tab{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif;transition:all .15s;}
+.day-tab.active,.day-tab:hover{background:rgba(124,106,247,.15);color:var(--accent);border-color:rgba(124,106,247,.3);}
+@media (max-width:800px){.layout{grid-template-columns:1fr;}.sidebar{position:static;height:auto;}.stats-grid{grid-template-columns:repeat(2,1fr);}.main{padding:24px 16px;}}
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <h2>LLM Relay</h2>
+    <p>Enter the admin token to open the dashboard</p>
+    <div class="field"><label>Admin token</label><input type="password" id="tokenInput" placeholder="ADMIN_TOKEN"/></div>
+    <button class="btn btn-primary btn-full" onclick="login()">Open dashboard →</button>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="logo">relay<span>.</span></div>
+    <button class="nav-item active" onclick="showPage('stats',this)">Overview</button>
+    <button class="nav-item" onclick="showPage('keys',this)">Keys &amp; quotas</button>
+    <button class="nav-item" onclick="showPage('pool',this)">Upstream key pool</button>
+    <button class="nav-item" onclick="showPage('test',this)">API test</button>
+    <div style="flex:1"></div>
+    <div style="font-size:11px;color:var(--text2);padding:10px 14px;border-top:1px solid var(--border);margin-top:8px">
+      User portal<br>
+      <a href="/user" target="_blank" style="color:var(--accent);font-size:12px;text-decoration:none">→ Open</a>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <div class="page active" id="page-stats">
+      <div class="page-header">
+        <div class="page-title">Overview</div>
+        <div class="day-tabs">
+          <button class="day-tab active" onclick="setDays(1,this)">24h</button>
+          <button class="day-tab" onclick="setDays(7,this)">7 days</button>
+          <button class="day-tab" onclick="setDays(30,this)">30 days</button>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Requests</div><div class="stat-value" id="s-req">—</div></div>
+        <div class="stat-card"><div class="stat-label">Input tokens</div><div class="stat-value" id="s-in">—</div></div>
+        <div class="stat-card"><div class="stat-label">Output tokens</div><div class="stat-value" id="s-out">—</div></div>
+        <div class="stat-card"><div class="stat-label">Est. upstream cost</div><div class="stat-value" id="s-cost">—</div><div class="stat-sub">monitoring estimate</div></div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header"><h3>Tokens by model</h3></div>
+        <div style="padding:20px" id="modelBars"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-keys">
+      <div class="page-header">
+        <div class="page-title">Keys &amp; quotas</div>
+        <button class="btn btn-sm btn-primary" onclick="openCreateModal()">+ New key</button>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header"><h3>All keys</h3><button class="btn btn-sm btn-outline" onclick="loadKeys()">↻ Refresh</button></div>
+        <table>
+          <thead><tr><th>Key</th><th>Owner</th><th>Used / quota (tokens)</th><th>Status</th><th>Set quota</th><th></th></tr></thead>
+          <tbody id="keysTable"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="page" id="page-pool">
+      <div class="page-header">
+        <div class="page-title">Upstream key pool</div>
+        <button class="btn btn-sm btn-outline" onclick="loadPool()">↻ Refresh</button>
+      </div>
+      <div class="table-wrap" style="padding:24px">
+        <p style="color:var(--text2);font-size:14px">Keys per provider that are not cooling down after a rate limit</p>
+        <div class="pool-grid" id="poolGrid"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-test">
+      <div class="page-header"><div class="page-title">API test</div></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px">
+        <div class="table-wrap" style="padding:20px">
+          <h3 style="margin-bottom:16px;font-size:15px">Request</h3>
+          <div class="field"><label>User API key</label><input type="text" id="testKey" placeholder="sk-relay-..."/></div>
+          <div class="field">
+            <label>Model</label>
+            <select id="testModel">
+              <option value="llama-3.3-70b">llama-3.3-70b (Groq)</option>
+              <option value="llama-3.1-8b">llama-3.1-8b (Groq)</option>
+              <option value="mixtral-8x7b">mixtral-8x7b (Groq)</option>
+              <option value="deepseek-chat">deepseek-chat</option>
+              <option value="gpt-4o-mini">gpt-4o-mini</option>
+              <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+            </select>
+          </div>
+          <div class="field"><label>Message</label><input type="text" id="testContent" value="Hello"/></div>
+          <button class="btn btn-primary btn-full" onclick="testAPI()" id="testBtn">Send</button>
+        </div>
+        <div class="table-wrap" style="padding:20px">
+          <h3 style="margin-bottom:16px;font-size:15px">Response</h3>
+          <div id="testResult" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);min-height:200px;white-space:pre-wrap;word-break:break-all">Waiting for a request…</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <h3>New API key</h3>
+    <div class="field"><label>Name</label><input type="text" id="newName" placeholder="e.g. demo client"/></div>
+    <div class="field"><label>Token quota</label><input type="number" id="newQuota" value="100000" min="0" step="1000"/></div>
+    <div id="newKeyResult" style="display:none">
+      <label>New key (click to copy)</label>
+      <div class="key-display" id="newKeyValue" onclick="copyText(this.textContent)"></div>
+      <p style="font-size:12px;color:var(--red)">Copy it now: it is not shown again.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('createModal')">Close</button>
+      <button class="btn btn-primary" id="createBtn" onclick="createKey()">Create</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = location.origin;
+let adminToken = '';
+let currentDays = 1;
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => Number(n || 0).toLocaleString();
+
+function login() {
+  const t = document.getElementById('tokenInput').value.trim();
+  if (!t) return showToast('Enter the admin token', 'error');
+  adminToken = t;
+  document.getElementById('loginWrap').style.display = 'none';
+  loadStats(); loadKeys(); loadPool();
+}
+document.getElementById('tokenInput').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  el.classList.add('active');
+  if (name === 'stats') loadStats();
+  if (name === 'keys') loadKeys();
+  if (name === 'pool') loadPool();
+}
+
+function setDays(d, el) {
+  currentDays = d;
+  document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadStats();
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(BASE + path, {...opts, headers:{'x-admin-token':adminToken, 'Content-Type':'application/json', ...opts.headers}});
+  if (res.status === 403) {
+    showToast('Wrong admin token', 'error');
+    document.getElementById('loginWrap').style.display = 'flex';
+    throw new Error('forbidden');
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Request failed');
+  return data;
+}
+
+async function loadStats() {
+  try {
+    const d = await api(`/admin/stats?days=${currentDays}`);
+    document.getElementById('s-req').textContent = fmt(d.requests);
+    document.getElementById('s-in').textContent = fmt(d.input_tokens);
+    document.getElementById('s-out').textContent = fmt(d.output_tokens);
+    document.getElementById('s-cost').textContent = '$' + d.est_cost_usd.toFixed(4);
+    const bars = document.getElementById('modelBars');
+    if (!d.by_model.length) { bars.innerHTML = '<div class="empty">No requests in this period</div>'; return; }
+    const max = Math.max(...d.by_model.map(m => m.total_tokens), 1);
+    bars.innerHTML = d.by_model.map(m => `
+      <div class="bar-wrap">
+        <div class="bar-label">${esc(m.model)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(m.total_tokens / max * 100).toFixed(1)}%"></div></div>
+        <div class="bar-val">${fmt(m.total_tokens)} tok</div>
+        <div style="font-size:11px;color:var(--text2);width:60px;text-align:right;font-family:'JetBrains Mono',monospace">${m.requests} req</div>
+      </div>`).join('');
+  } catch (e) {}
+}
+
+async function loadKeys() {
+  try {
+    const keys = await api('/admin/keys');
+    const tbody = document.getElementById('keysTable');
+    if (!keys.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">No keys yet</td></tr>'; return; }
+    tbody.innerHTML = keys.map(k => `
+      <tr>
+        <td style="color:var(--accent2)">${esc(k.key_preview)}</td>
+        <td style="color:var(--text2);font-family:'Syne',sans-serif">${esc(k.email || k.name || '—')}</td>
+        <td>${fmt(k.tokens_used)} / ${fmt(k.token_quota)}</td>
+        <td><span class="${k.active ? 'badge-green' : 'badge-red'}">${k.active ? 'active' : 'disabled'}</span></td>
+        <td><div class="quota-row">
+          <input type="number" value="${k.token_quota}" min="0" step="1000" id="q-${k.id}"/>
+          <button class="btn btn-sm btn-green" onclick="setQuota(${k.id})">Save</button>
+        </div></td>
+        <td><button class="btn btn-sm ${k.active ? 'btn-red' : 'btn-green'}" onclick="setActive(${k.id}, ${!k.active})">${k.active ? 'Disable' : 'Enable'}</button></td>
+      </tr>`).join('');
+  } catch (e) {}
+}
+
+async function setQuota(id) {
+  const token_quota = parseInt(document.getElementById('q-' + id)?.value, 10);
+  if (!(token_quota >= 0)) return showToast('Enter a quota of 0 or more', 'error');
+  try {
+    const d = await api(`/admin/keys/${id}/quota`, {method:'POST', body:JSON.stringify({token_quota, mode:'set'})});
+    showToast(`Quota set to ${fmt(d.token_quota)} tokens`, 'success');
+    loadKeys();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function setActive(id, active) {
+  try {
+    await api(`/admin/keys/${id}/active`, {method:'POST', body:JSON.stringify({active})});
+    showToast(active ? 'Key enabled' : 'Key disabled', 'success');
+    loadKeys();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function loadPool() {
+  try {
+    const pool = await api('/admin/pool');
+    const grid = document.getElementById('poolGrid');
+    const entries = Object.entries(pool);
+    if (!entries.length) { grid.innerHTML = '<div class="empty">No upstream keys configured</div>'; return; }
+    grid.innerHTML = entries.map(([name, info]) => `
+      <div class="pool-card">
+        <div class="pool-name">${esc(name)}</div>
+        <div class="pool-count">${info.available}<span style="font-size:14px;color:var(--text2)">/${info.total}</span></div>
+        <div style="font-size:12px;color:var(--text2);margin-top:4px">keys available</div>
+      </div>`).join('');
+  } catch (e) {}
+}
+
+function openCreateModal() {
+  document.getElementById('newKeyResult').style.display = 'none';
+  document.getElementById('newName').value = '';
+  document.getElementById('newQuota').value = '100000';
+  document.getElementById('createBtn').style.display = 'block';
+  openModal('createModal');
+}
+
+async function createKey() {
+  const name = document.getElementById('newName').value.trim();
+  const token_quota = parseInt(document.getElementById('newQuota').value, 10) || 0;
+  try {
+    const d = await api('/admin/keys', {method:'POST', body:JSON.stringify({name, token_quota})});
+    document.getElementById('newKeyValue').textContent = d.key;
+    document.getElementById('newKeyResult').style.display = 'block';
+    document.getElementById('createBtn').style.display = 'none';
+    showToast('Key created', 'success');
+    loadKeys();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function testAPI() {
+  const key = document.getElementById('testKey').value.trim();
+  const model = document.getElementById('testModel').value;
+  const content = document.getElementById('testContent').value.trim() || 'Hello';
+  const btn = document.getElementById('testBtn');
+  const result = document.getElementById('testResult');
+  if (!key) return showToast('Enter a user API key', 'error');
+  btn.textContent = 'Sending…'; btn.disabled = true;
+  result.textContent = 'Sending…'; result.style.color = 'var(--text2)';
+  const start = Date.now();
+  try {
+    const res = await fetch(BASE + '/v1/chat/completions', {method:'POST', headers:{'Authorization':'Bearer ' + key, 'Content-Type':'application/json'}, body:JSON.stringify({model, messages:[{role:'user', content}]})});
+    const d = await res.json();
+    const ms = Date.now() - start;
+    if (d.choices?.[0]?.message?.content) {
+      const info = d._relay_info || {};
+      result.style.color = 'var(--green)';
+      result.textContent = `✓ OK (${ms} ms)\n\nReply: ${d.choices[0].message.content}\n\nUpstream model: ${info.upstream_model}\nTokens: ${info.input_tokens} in / ${info.output_tokens} out\nQuota remaining: ${fmt(info.tokens_remaining)}`;
+    } else {
+      result.style.color = 'var(--red)';
+      result.textContent = '✗ Error:\n' + JSON.stringify(d, null, 2);
+    }
+  } catch (e) { result.style.color = 'var(--red)'; result.textContent = '✗ Failed: ' + e.message; }
+  btn.textContent = 'Send'; btn.disabled = false;
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el => el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); }));
+function copyText(t) { navigator.clipboard.writeText(t); showToast('Copied', 'success'); }
+let tt;
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = (type === 'success' ? '✓ ' : '✗ ') + msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
